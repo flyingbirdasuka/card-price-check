@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { vintedSuggest, updateLookup } from "../api";
-import { CardLookup, VintedSuggestion } from "../types";
+import type { CardLookup, VintedSuggestion } from "../types";
 
 interface Props {
   lookup: CardLookup;

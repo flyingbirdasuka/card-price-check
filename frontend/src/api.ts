@@ -1,4 +1,4 @@
-import { CardLookup, CardType, VintedSuggestion } from "./types";
+import type { CardLookup, CardType, VintedSuggestion } from "./types";
 
 const BASE = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
 
@@ -62,6 +62,15 @@ export async function vintedSuggest(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ lookup_id, my_price, condition }),
   });
+}
+
+export async function translateCardName(card_name: string, card_type: CardType): Promise<string> {
+  const res = await request<{ english_name: string }>("/api/ai/translate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ card_name, card_type }),
+  });
+  return res.english_name;
 }
 
 export function exportCsvUrl(): string {

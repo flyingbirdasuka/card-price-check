@@ -10,7 +10,7 @@ async def scan_card_photo(image_data: bytes, mime_type: str) -> dict:
     image_b64 = base64.standard_b64encode(image_data).decode("utf-8")
 
     message = await client.messages.create(
-        model="claude-opus-4-5",
+        model="claude-haiku-4-5-20251001",
         max_tokens=300,
         messages=[{
             "role": "user",
@@ -24,8 +24,9 @@ async def scan_card_photo(image_data: bytes, mime_type: str) -> dict:
                     "text": (
                         "Look at this trading card and extract:\n"
                         "1. card_type: 'pokemon' or 'yugioh'\n"
-                        "2. card_name: English name if visible, otherwise romanize the Japanese\n"
-                        "3. card_number: e.g. '4/102' or 'DUSA-EN001' (empty string if not visible)\n\n"
+                        "2. card_name: ALWAYS use the official English name (e.g. 'Change of Heart', not 'Kokoro Kawari'). "
+                        "Translate from Japanese if needed — PriceCharting indexes by English name.\n"
+                        "3. card_number: e.g. '4/102' or 'DL2-135' (empty string if not visible)\n\n"
                         "Respond ONLY with valid JSON: "
                         '{"card_type": "...", "card_name": "...", "card_number": "..."}'
                     ),
@@ -39,6 +40,23 @@ async def scan_card_photo(image_data: bytes, mime_type: str) -> dict:
     return json.loads(text[start:end])
 
 
+async def translate_card_name(card_name: str, card_type: str) -> str:
+    message = await client.messages.create(
+        model="claude-haiku-4-5-20251001",
+        max_tokens=100,
+        messages=[{
+            "role": "user",
+            "content": (
+                f"What is the official English name of this {card_type} card: '{card_name}'?\n"
+                "PriceCharting uses English names even for Japanese cards.\n"
+                "Respond with ONLY the English card name, nothing else. "
+                "If it is already in English, return it as-is."
+            ),
+        }],
+    )
+    return message.content[0].text.strip()
+
+
 async def suggest_vinted_price(
     card_name: str,
     card_type: str,
@@ -47,7 +65,7 @@ async def suggest_vinted_price(
     condition: str,
 ) -> dict:
     message = await client.messages.create(
-        model="claude-opus-4-5",
+        model="claude-haiku-4-5-20251001",
         max_tokens=400,
         messages=[{
             "role": "user",

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { getHistory } from "./api";
-import { CardLookup } from "./types";
+import type { CardLookup } from "./types";
 import LookupForm from "./components/LookupForm";
 import ResultCard from "./components/ResultCard";
 import HistoryTable from "./components/HistoryTable";

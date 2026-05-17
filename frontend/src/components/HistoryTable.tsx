@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { updateLookup, deleteLookup, exportCsvUrl } from "../api";
-import { CardLookup } from "../types";
+import type { CardLookup } from "../types";
 import VintedModal from "./VintedModal";
 
 interface Props {

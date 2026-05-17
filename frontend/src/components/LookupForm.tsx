@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
-import { lookupCard, scanPhoto } from "../api";
-import { CardLookup, CardType } from "../types";
+import { lookupCard, scanPhoto, translateCardName } from "../api";
+import type { CardLookup, CardType } from "../types";
 
 interface Props {
   onResult: (lookup: CardLookup) => void;
@@ -11,6 +11,7 @@ export default function LookupForm({ onResult }: Props) {
   const [cardName, setCardName] = useState("");
   const [cardNumber, setCardNumber] = useState("");
   const [scanning, setScanning] = useState(false);
+  const [translating, setTranslating] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
@@ -25,8 +26,13 @@ export default function LookupForm({ onResult }: Props) {
       setCardType(result.card_type);
       setCardName(result.card_name);
       setCardNumber(result.card_number);
-    } catch {
-      setError("Could not read card from photo. Please fill in manually.");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "";
+      if (msg.includes("415") || msg.includes("Unsupported")) {
+        setError("HEIC/HEIF photos aren't supported. Export the photo as JPEG from your Photos app first.");
+      } else {
+        setError("Could not read card from photo. Please fill in manually.");
+      }
     } finally {
       setScanning(false);
     }
@@ -58,7 +64,7 @@ export default function LookupForm({ onResult }: Props) {
         className="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center cursor-pointer hover:border-indigo-400 transition-colors mb-5"
         onClick={() => fileRef.current?.click()}
       >
-        <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handlePhoto} />
+        <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handlePhoto} />
         {scanning ? (
           <p className="text-indigo-500 text-sm font-medium animate-pulse">Scanning card with AI…</p>
         ) : (
@@ -92,12 +98,34 @@ export default function LookupForm({ onResult }: Props) {
 
         {/* Name */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Card name</label>
+          <div className="flex justify-between items-center mb-1">
+            <label className="text-sm font-medium text-gray-700">Card name <span className="text-gray-400 font-normal">(use English)</span></label>
+            {cardName && (
+              <button
+                type="button"
+                disabled={translating}
+                onClick={async () => {
+                  setTranslating(true);
+                  try {
+                    const name = await translateCardName(cardName, cardType);
+                    setCardName(name);
+                  } catch {
+                    setError("Translation failed.");
+                  } finally {
+                    setTranslating(false);
+                  }
+                }}
+                className="text-xs text-indigo-500 hover:text-indigo-700 disabled:opacity-50"
+              >
+                {translating ? "Translating…" : "🌐 Translate to English"}
+              </button>
+            )}
+          </div>
           <input
             type="text"
             value={cardName}
             onChange={(e) => setCardName(e.target.value)}
-            placeholder="e.g. Charizard"
+            placeholder="e.g. Charizard / Change of Heart"
             required
             className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
           />

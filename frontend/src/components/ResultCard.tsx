@@ -1,4 +1,4 @@
-import { CardLookup } from "../types";
+import type { CardLookup } from "../types";
 
 interface Props {
   lookup: CardLookup;
